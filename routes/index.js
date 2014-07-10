@@ -1,7 +1,10 @@
 var invoker = require('./../lib/invoker');
+var constants = require('./../lib/constants');
+
+var TITLE = constants.TITLE;
 
 function index(req, res) {
-  res.render('index', { title: 'Express' });
+  res.render('index', { title: TITLE });
 }
 
 function folders(req, res) {
@@ -11,7 +14,7 @@ function folders(req, res) {
       res.send(500);
     } else {
       res.render('folders', {
-        title: 'Express',
+        title: TITLE,
         entries: result.item_collection.entries.map(function(entry) {
           entry.href = '/' + entry.type + 's/' + entry.id;
           return entry;
@@ -27,7 +30,7 @@ function files(req, res) {
       console.error(err);
       res.send(500);
     } else {
-      res.render('files', { title: 'Express', result: JSON.stringify(result) });
+      res.render('files', { title: TITLE, result: JSON.stringify(result) });
     }
   });
 }
