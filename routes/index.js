@@ -1,10 +1,15 @@
+var request = require('request');
 var invoker = require('./../lib/invoker');
 var constants = require('./../lib/constants');
 
 var TITLE = constants.TITLE;
 
 function index(req, res) {
-  res.render('index', { title: TITLE });
+  if (req.isAuthenticated()) {
+    res.redirect('/folders/0');
+  } else {
+    res.render('index', { title: TITLE });
+  }
 }
 
 function folders(req, res) {
@@ -35,7 +40,14 @@ function files(req, res) {
   });
 }
 
+function download(req, res) {
+  request.get({
+    headers: { Authorization: "Bearer " +  req.session.passport.user.accessToken },
+    url: 'https://api.box.com/2.0/files/' + req.params.id + '/content'
+  }).pipe(res);
+}
+
 exports.index = index;
 exports.folders = folders;
 exports.files = files;
-
+exports.download = download;

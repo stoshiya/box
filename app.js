@@ -66,8 +66,9 @@ router.get('/callback', passport.authenticate('box', { failureRedirect: '/auth' 
   res.redirect(req.session.callbackURL || '/folders/0');
 });
 router.get('/', routes.index);
-router.get('/folders/:id', auth, routes.folders);
-router.get('/files/:id',   auth, routes.files);
+router.get('/folders/:id',  auth, routes.folders);
+router.get('/files/:id',    auth, routes.files);
+router.get('/download/:id', auth, routes.download);
 app.use('/', router);
 
 /// catch 404 and forward to error handler
@@ -102,4 +103,3 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
-
