@@ -35,7 +35,7 @@ function files(req, res) {
       console.error(err);
       res.send(500);
     } else {
-      res.render('files', { title: TITLE, result: JSON.stringify(result) });
+      res.render('files', { title: TITLE, result: result });
     }
   });
 }
