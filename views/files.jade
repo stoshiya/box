@@ -2,10 +2,11 @@ extends layout
 
 block content
   h1= title
-  div
-    - each path in result.path_collection.entries
-      div
-        a(href='/folders/#{path.id}') #{path.name}
+
+  include include/path
+
   div #{result.name}
   div
     a(href='/download/#{result.id}') download
+
+  include include/logout

@@ -18,13 +18,10 @@ function folders(req, res) {
       console.error(err);
       res.send(500);
     } else {
-      res.render('folders', {
-        title: TITLE,
-        entries: result.item_collection.entries.map(function(entry) {
-          entry.href = '/' + entry.type + 's/' + entry.id;
-          return entry;
-        })
+      result.item_collection.entries.forEach(function(entry) {
+        entry.href = '/' + entry.type + 's/' + entry.id;
       });
+      res.render('folders', { title: TITLE, result: result });
     }
   });
 }

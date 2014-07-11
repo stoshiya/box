@@ -1,0 +1,4 @@
+div
+  - each path in result.path_collection.entries
+    div
+      a(href='/folders/#{path.id}') #{path.name}

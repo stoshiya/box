@@ -57,13 +57,17 @@ var auth = function(req, res, next) {
     return;
   }
   req.session.callbackURL = req.url;
-  res.redirect('/auth');
+  res.redirect('/login');
 };
 
 var router = express.Router();
-router.get('/auth',     passport.authenticate('box'));
-router.get('/callback', passport.authenticate('box', { failureRedirect: '/auth' }), function (req, res) {
+router.get('/login',    passport.authenticate('box'));
+router.get('/callback', passport.authenticate('box', { failureRedirect: '/login' }), function (req, res) {
   res.redirect(req.session.callbackURL || '/folders/0');
+});
+router.get('/logout', function(req, res) {
+  req.logout();
+  res.redirect('/');
 });
 router.get('/', routes.index);
 router.get('/folders/:id',  auth, routes.folders);

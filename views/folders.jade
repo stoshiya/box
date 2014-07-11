@@ -3,6 +3,12 @@ extends layout
 block content
   h1= title
 
-  - each entry in entries
+  include include/path
+
+  div #{result.name}
+
+  - each entry in result.item_collection.entries
      div
        a(href='#{entry.href}') #{entry.name}
+
+  include include/logout
