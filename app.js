@@ -73,6 +73,8 @@ router.get('/', routes.index);
 router.get('/folders/:id',  auth, routes.folders);
 router.get('/files/:id',    auth, routes.files);
 router.get('/download/:id', auth, routes.download);
+router.get('/convert/:id',  auth, routes.convert);
+router.get('/documents',    auth, routes.documents);
 app.use('/', router);
 
 /// catch 404 and forward to error handler
@@ -107,3 +109,7 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
+
+process.on('uncaughtException', function(err) {
+  console.error(err);
+});

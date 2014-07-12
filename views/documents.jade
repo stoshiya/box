@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1= title
+
+  div documents
+
+  - each document in result.document_collection.entries
+    div
+      span
+        a(href='/files/#{document.name}') /files/#{document.name}
+      span status:#{document.status}
+      span id:#{document.id}
+
+  include include/logout
