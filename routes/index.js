@@ -41,18 +41,27 @@ function files(req, res) {
 function download(req, res) {
   request.get({
     headers: { Authorization: "Bearer " + req.session.passport.user.accessToken },
-    url: 'https://api.box.com/2.0/files/' + req.params.id + '/content'
+    url: constants.CONTENT_API_BASE + '/files/' + req.params.id + '/content'
   }).pipe(res);
 }
 
 function convert(req, res) {
-  invoker.documents(function(err, result) {
+  async.parallel({
+    content: function (callback) {
+      invoker.content(req.session.passport.user.accessToken, req.params.id, callback);
+    },
+    documents: function (callback) {
+      invoker.documents(callback);
+    }
+  }, function (err, result) {
     if (err) {
       console.error(err);
       res.send(500);
       return;
     }
-    if (result.document_collection.entries.some(function(entry) { return entry.name === req.params.id; })) {
+    if (result.documents.document_collection.entries.some(function(entry) {
+      return entry.name === req.params.id && new Date(result.content.modified_at) < new Date(entry.created_at);
+    })) {
       res.redirect('/documents');
       return;
     }
@@ -61,7 +70,7 @@ function convert(req, res) {
         invoker.location(req.session.passport.user.accessToken, req.params.id, callback)
       },
       function (url, callback) {
-        invoker.sessions(url, req.params.id, callback);
+        invoker.upload(url, req.params.id, callback);
       }
     ], function (err) {
       if (err) {
@@ -85,9 +94,21 @@ function documents(req, res) {
   });
 }
 
+function view(req, res) {
+  invoker.sessions(req.params.id, function(err, result) {
+    if (err) {
+      console.error(err);
+      res.send(500);
+    } else {
+      res.redirect(result.urls.view);
+    }
+  });
+}
+
 exports.index = index;
 exports.folders = folders;
 exports.files = files;
 exports.download = download;
 exports.convert = convert;
 exports.documents = documents;
+exports.view = view;

@@ -10,6 +10,7 @@ block content
       span
         a(href='/files/#{document.name}') /files/#{document.name}
       span status:#{document.status}
-      span id:#{document.id}
+      span id:
+        a(href='/documents/#{document.id}') #{document.id}
 
   include include/logout

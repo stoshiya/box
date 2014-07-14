@@ -70,11 +70,12 @@ router.get('/logout', function(req, res) {
   res.redirect('/');
 });
 router.get('/', routes.index);
-router.get('/folders/:id',  auth, routes.folders);
-router.get('/files/:id',    auth, routes.files);
-router.get('/download/:id', auth, routes.download);
-router.get('/convert/:id',  auth, routes.convert);
-router.get('/documents',    auth, routes.documents);
+router.get('/folders/:id',   auth, routes.folders);
+router.get('/files/:id',     auth, routes.files);
+router.get('/download/:id',  auth, routes.download);
+router.get('/convert/:id',   auth, routes.convert);
+router.get('/documents',     auth, routes.documents);
+router.get('/documents/:id', auth, routes.view);
 app.use('/', router);
 
 /// catch 404 and forward to error handler
