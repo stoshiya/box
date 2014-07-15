@@ -5,10 +5,16 @@ block content
 
   include include/path
 
-  div #{result.name}
+  div
+    i.fa.fa-lg.fa-folder-open-o
+    span #{result.name}
 
   - each entry in result.item_collection.entries
      div
+       - if (entry.type === 'folder')
+         i.fa.fa-lg.fa-folder-o
+       - else
+         i.fa.fa-lg.fa-file-o
        a(href='#{entry.href}') #{entry.name}
 
   include include/logout

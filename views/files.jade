@@ -5,10 +5,15 @@ block content
 
   include include/path
 
-  div #{result.name}
   div
-    a(href='/download/#{result.id}') download
+    i.fa.fa-quote-left
+    span #{result.name}
+    i.fa.fa-quote-right
   div
+    i.fa.fa-lg.fa-external-link
     a(href='/view/#{result.id}') view
+  div
+    i.fa.fa-lg.fa-download
+    a(href='/download/#{result.id}') download
 
   include include/logout

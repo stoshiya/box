@@ -1,4 +1,5 @@
 div
   - each path in result.path_collection.entries
     div
+      i.fa.fa-lg.fa-folder-open-o
       a(href='/folders/#{path.id}') #{path.name}
