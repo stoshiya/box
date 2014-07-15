@@ -45,7 +45,7 @@ function download(req, res) {
   }).pipe(res);
 }
 
-function convert(req, res) {
+function view(req, res) {
   async.parallel({
     content: function (callback) {
       invoker.content(req.session.passport.user.accessToken, req.params.id, callback);
@@ -62,24 +62,37 @@ function convert(req, res) {
     if (result.documents.document_collection.entries.some(function(entry) {
       return entry.name === req.params.id && new Date(result.content.modified_at) < new Date(entry.created_at);
     })) {
-      res.redirect('/documents');
-      return;
+      var id = result.documents.document_collection.entries.filter(function(entry) {
+        return entry.name === req.params.id && new Date(result.content.modified_at) < new Date(entry.created_at);
+      }).shift().id;
+      invoker.sessions(id, function(err, result) {
+        if (err) {
+          console.error(err);
+          res.send(500);
+          return;
+        }
+        res.redirect(result.urls.view);
+      });
+    } else {
+      async.waterfall([
+        function (callback) {
+          invoker.location(req.session.passport.user.accessToken, req.params.id, callback)
+        },
+        function (url, callback) {
+          invoker.upload(url, req.params.id, callback);
+        },
+        function (body, callback) {
+          invoker.sessions(body.id, callback);
+        }
+      ], function (err, result) {
+        if (err) {
+          console.error(err);
+          res.send(500);
+          return;
+        }
+        res.redirect(result.urls.view);
+      });
     }
-    async.waterfall([
-      function (callback) {
-        invoker.location(req.session.passport.user.accessToken, req.params.id, callback)
-      },
-      function (url, callback) {
-        invoker.upload(url, req.params.id, callback);
-      }
-    ], function (err) {
-      if (err) {
-        console.error(err);
-        res.send(500);
-        return;
-      }
-      res.redirect('/documents');
-    });
   });
 }
 
@@ -94,21 +107,9 @@ function documents(req, res) {
   });
 }
 
-function view(req, res) {
-  invoker.sessions(req.params.id, function(err, result) {
-    if (err) {
-      console.error(err);
-      res.send(500);
-    } else {
-      res.redirect(result.urls.view);
-    }
-  });
-}
-
 exports.index = index;
 exports.folders = folders;
 exports.files = files;
 exports.download = download;
-exports.convert = convert;
-exports.documents = documents;
 exports.view = view;
+exports.documents = documents;
