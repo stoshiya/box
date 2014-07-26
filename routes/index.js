@@ -107,9 +107,25 @@ function documents(req, res) {
   });
 }
 
+function zip(req, res) {
+  request.get({
+    headers: { Authorization: "Token " + process.env.API_KEY },
+    url: constants.VIEW_API_BASE + '/documents/' + req.params.id + '/content.zip'
+  }).pipe(res);
+}
+
+function pdf(req, res) {
+  request.get({
+    headers: { Authorization: "Token " + process.env.API_KEY },
+    url: constants.VIEW_API_BASE + '/documents/' + req.params.id + '/content.pdf'
+  }).pipe(res);
+}
+
 exports.index = index;
 exports.folders = folders;
 exports.files = files;
 exports.download = download;
 exports.view = view;
 exports.documents = documents;
+exports.zip = zip;
+exports.pdf = pdf;

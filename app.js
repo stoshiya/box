@@ -20,7 +20,7 @@ passport.deserializeUser(function(obj, done) {
   done(null, obj);
 });
 
-if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET || !process.env.CALLBACK_URL) {
+if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET || !process.env.CALLBACK_URL || !process.env.API_KEY) {
   process.exit(1);
   return;
 }
@@ -75,6 +75,8 @@ router.get('/files/:id',    auth, routes.files);
 router.get('/download/:id', auth, routes.download);
 router.get('/view/:id',     auth, routes.view);
 router.get('/documents',    auth, routes.documents);
+router.get('/zip/:id',      auth, routes.zip);
+router.get('/pdf/:id',      auth, routes.pdf);
 app.use('/', router);
 
 /// catch 404 and forward to error handler

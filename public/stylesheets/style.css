@@ -11,6 +11,20 @@ div {
   line-height: 150%;
 }
 
+span {
+  margin-left: 10px;
+}
+
 i.fa {
   margin: 10px;
+  color: #000000;
 }
+
+i.fa-file-pdf-o {
+  margin: 0;
+}
+
+i.fa-file-zip-o {
+  margin: 0;
+}
+
