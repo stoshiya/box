@@ -9,13 +9,13 @@ block content
     div
       span
         a(href='/files/#{document.name}') /files/#{document.name}
-      span
+      span.documents
         a(href='/pdf/#{document.id}')
           i.fa.fa-lg.fa-file-pdf-o
-      span
+      span.documents
         a(href='/zip/#{document.id}')
           i.fa.fa-lg.fa-file-zip-o
-      span status:#{document.status}
-      span id:#{document.id}
+      span.documents status:#{document.status}
+      span.documents id:#{document.id}
 
   include include/logout
