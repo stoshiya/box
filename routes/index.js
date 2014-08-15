@@ -1,9 +1,13 @@
+var AdmZip = require('adm-zip');
 var async = require('async');
+var cheerio = require('cheerio');
 var request = require('request');
-var invoker = require('./../lib/invoker');
 var constants = require('./../lib/constants');
+var elasticsearch = require('./../lib/elasticsearch');
+var invoker = require('./../lib/invoker');
 
 var TITLE = constants.TITLE;
+var OPTIONS = { normalizeWhitespace: true, xmlMode: true };
 
 function index(req, res) {
   if (req.isAuthenticated()) {
@@ -45,7 +49,7 @@ function download(req, res) {
   }).pipe(res);
 }
 
-function view(req, res) {
+function viewByFile(req, res) {
   async.parallel({
     content: function (callback) {
       invoker.content(req.session.passport.user.accessToken, req.params.id, callback);
@@ -76,7 +80,7 @@ function view(req, res) {
     } else {
       async.waterfall([
         function (callback) {
-          invoker.location(req.session.passport.user.accessToken, req.params.id, callback)
+          invoker.location(req.session.passport.user.accessToken, req.params.id, callback);
         },
         function (url, callback) {
           invoker.upload(url, req.params.id, callback);
@@ -96,14 +100,63 @@ function view(req, res) {
   });
 }
 
+function viewByDocument(req, res) {
+  invoker.sessions(req.params.id, function(err, result) {
+    if (err) {
+      console.error(err);
+      res.send(500);
+      return;
+    }
+    res.redirect(result.urls.view);
+  });
+}
+
+function indexing(id, callback) {
+  request.get({
+    headers: { Authorization: "Token " + process.env.API_KEY },
+    url: constants.VIEW_API_BASE + '/documents/' + id + '/content.zip',
+    encoding: null
+  }, function (err, response, buffer) {
+    if (err) {
+      callback({ error: err });
+      return;
+    }
+    if (response.statusCode !== 200) {
+      callback({ statusCode: response.statusCode });
+      return;
+    }
+    var text = new AdmZip(buffer).getEntries()
+      .filter(function (entry) {
+        return !entry.isDirectory && entry.name.match(constants.REGEXP_SVG) !== null;
+      })
+      .map(function (entry) {
+        return cheerio.load(entry.getData(), OPTIONS)('text tspan').text();
+      }).join();
+    elasticsearch.putDocument(id, text, callback);
+  });
+}
+
 function documents(req, res) {
   invoker.documents(function(err, result) {
     if (err) {
       console.error(err);
       res.send(500);
-    } else {
-      res.render('documents', { title: TITLE, result: result });
+      return;
     }
+    res.render('documents', { title: TITLE, result: result });
+
+    // make indices for all documents.
+    async.eachSeries(result.document_collection.entries,
+      function(entry, callback) {
+        indexing(entry.id, callback);
+      },
+      function(err) {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log('done indices.');
+        }
+      });
   });
 }
 
@@ -121,11 +174,44 @@ function pdf(req, res) {
   }).pipe(res);
 }
 
+function createIndex(req, res) {
+  if (typeof req.params.id !== 'string') {
+    res.send(400);
+    return;
+  }
+  indexing(req.params.id, function(err, result) {
+    if (err) {
+      res.send(500);
+      console.error(err);
+      return;
+    }
+    res.send(result);
+  });
+}
+
+function search(req, res) {
+  if (typeof req.query.keyword !== 'string' || req.query.keyword === '') {
+    res.send(400);
+    return;
+  }
+  elasticsearch.search(req.query.keyword, function(err, result) {
+    if (err) {
+      res.send(500);
+      console.error(err);
+      return;
+    }
+    res.render('search', { title: TITLE, result: result });
+  });
+}
+
 exports.index = index;
 exports.folders = folders;
 exports.files = files;
 exports.download = download;
-exports.view = view;
+exports.viewByFile = viewByFile;
+exports.viewByDocument = viewByDocument;
 exports.documents = documents;
 exports.zip = zip;
 exports.pdf = pdf;
+exports.createIndex = createIndex;
+exports.search = search;

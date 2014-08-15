@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  h1= title
+
+  div
+    span Hits:
+    span #{result.hits.total}
+
+  - each item in result.hits.hits
+    - console.log(Object.keys(item))
+    div
+      i.fa.fa-lg.fa-file-o
+      span.documents score:#{item._score}
+      span.documents
+        a(href='/view/document/#{item._source.id}') #{item._source.id}
+
+  include include/logout
