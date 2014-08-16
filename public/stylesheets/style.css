@@ -20,6 +20,18 @@ i.fa {
   color: #000000;
 }
 
+i.fa-folder-open-o {
+  margin-right: 9px;
+}
+
+i.fa-folder-o {
+  margin-right: 12px;
+}
+
+i.fa-file-o {
+  margin-right: 14px;
+}
+
 i.fa-file-pdf-o {
   margin: 0;
 }
