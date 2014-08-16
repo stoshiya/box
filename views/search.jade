@@ -3,12 +3,13 @@ extends layout
 block content
   h1= title
 
+  include include/searchform
+
   div
     span Hits:
     span #{result.hits.total}
 
   - each item in result.hits.hits
-    - console.log(Object.keys(item))
     div
       i.fa.fa-lg.fa-file-o
       span.documents score:#{item._score}

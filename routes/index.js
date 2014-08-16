@@ -190,17 +190,17 @@ function createIndex(req, res) {
 }
 
 function search(req, res) {
-  if (typeof req.query.keyword !== 'string' || req.query.keyword === '') {
+  if (typeof req.query.query !== 'string' || req.query.query === '') {
     res.send(400);
     return;
   }
-  elasticsearch.search(req.query.keyword, function(err, result) {
+  elasticsearch.search(req.query.query, function(err, result) {
     if (err) {
       res.send(500);
       console.error(err);
       return;
     }
-    res.render('search', { title: TITLE, result: result });
+    res.render('search', { title: TITLE, result: result, query: req.query.query });
   });
 }
 
