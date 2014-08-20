@@ -18,6 +18,6 @@ block content
       i.fa.fa-lg.fa-file-o
       span score:#{item._score}
       span.documents
-        a(href='/view/document/#{item._source.id}') #{item._source.id}
+        a(href='/files/#{item._source.id}') #{item._source.name}
 
   include include/logout

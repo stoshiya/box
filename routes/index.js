@@ -1,13 +1,10 @@
-var AdmZip = require('adm-zip');
 var async = require('async');
-var cheerio = require('cheerio');
 var request = require('request');
 var constants = require('./../lib/constants');
 var elasticsearch = require('./../lib/elasticsearch');
 var invoker = require('./../lib/invoker');
 
 var TITLE = constants.TITLE;
-var OPTIONS = { normalizeWhitespace: true, xmlMode: true };
 
 function index(req, res) {
   if (req.isAuthenticated()) {
@@ -49,7 +46,7 @@ function download(req, res) {
   }).pipe(res);
 }
 
-function viewByFile(req, res) {
+function view(req, res) {
   async.parallel({
     file: function (callback) {
       invoker.file(req.session.passport.user.accessToken, req.params.id, callback);
@@ -100,40 +97,52 @@ function viewByFile(req, res) {
   });
 }
 
-function viewByDocument(req, res) {
-  invoker.sessions(req.params.id, function(err, result) {
-    if (err) {
-      console.error(err);
-      res.send(500);
-      return;
+function indexing(token, id, callback) {
+  async.waterfall([
+    function(callback) {
+      async.parallel({
+        file: function (callback) {
+          invoker.file(token, id, callback);
+        },
+        documents: function (callback) {
+          invoker.documents(callback);
+        }
+      }, callback);
+    },
+    function(result, callback) {
+      if (result.documents.document_collection.entries.some(function (entry) {
+        return entry.name === id && new Date(result.file.modified_at) < new Date(entry.created_at);
+      })) {
+        callback(null, {
+          file: result.file,
+          id:   result.documents.document_collection.entries.filter(function (entry) {
+            return entry.name === id && new Date(result.file.modified_at) < new Date(entry.created_at);
+          }).shift().id
+        });
+      } else {
+        async.waterfall([
+          function (callback) {
+            invoker.location(token, id, callback);
+          },
+          function (url, callback) {
+            invoker.upload(url, id, callback);
+          }
+        ], function(err, id) {
+          callback(err,  { file: result.file, id: id })
+        });
+      }
+    },
+    function(result, callback) {
+      async.waterfall([
+        function(callback) {
+          invoker.extract(result.id, callback);
+        },
+        function(text, callback) {
+          elasticsearch.putDocument(result.file.id, result.file.name, text, callback);
+        }
+      ], callback);
     }
-    res.redirect(result.urls.view);
-  });
-}
-
-function indexing(id, callback) {
-  request.get({
-    headers: { Authorization: "Token " + process.env.API_KEY },
-    url: constants.VIEW_API_BASE + '/documents/' + id + '/content.zip',
-    encoding: null
-  }, function (err, response, buffer) {
-    if (err) {
-      callback({ error: err });
-      return;
-    }
-    if (response.statusCode !== 200) {
-      callback({ statusCode: response.statusCode });
-      return;
-    }
-    var text = new AdmZip(buffer).getEntries()
-      .filter(function (entry) {
-        return !entry.isDirectory && entry.name.match(constants.REGEXP_SVG) !== null;
-      })
-      .map(function (entry) {
-        return cheerio.load(entry.getData(), OPTIONS)('text tspan').text();
-      }).join();
-    elasticsearch.putDocument(id, text, callback);
-  });
+  ], callback);
 }
 
 function documents(req, res) {
@@ -144,19 +153,6 @@ function documents(req, res) {
       return;
     }
     res.render('documents', { title: TITLE, result: result });
-
-    // make indices for all documents.
-    async.eachSeries(result.document_collection.entries,
-      function(entry, callback) {
-        indexing(entry.id, callback);
-      },
-      function(err) {
-        if (err) {
-          console.error(err);
-        } else {
-          console.log('done indices.');
-        }
-      });
   });
 }
 
@@ -179,7 +175,7 @@ function createIndex(req, res) {
     res.send(400);
     return;
   }
-  indexing(req.params.id, function(err, result) {
+  indexing(req.session.passport.user.accessToken, req.params.id, function(err, result) {
     if (err) {
       res.send(500);
       console.error(err);
@@ -208,8 +204,7 @@ exports.index = index;
 exports.folders = folders;
 exports.files = files;
 exports.download = download;
-exports.viewByFile = viewByFile;
-exports.viewByDocument = viewByDocument;
+exports.view = view;
 exports.documents = documents;
 exports.zip = zip;
 exports.pdf = pdf;
