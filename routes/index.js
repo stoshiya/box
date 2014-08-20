@@ -32,7 +32,7 @@ function folders(req, res) {
 }
 
 function files(req, res) {
-  invoker.content(req.session.passport.user.accessToken, req.params.id, function(err, result) {
+  invoker.file(req.session.passport.user.accessToken, req.params.id, function(err, result) {
     if (err) {
       console.error(err);
       res.send(500);
@@ -51,8 +51,8 @@ function download(req, res) {
 
 function viewByFile(req, res) {
   async.parallel({
-    content: function (callback) {
-      invoker.content(req.session.passport.user.accessToken, req.params.id, callback);
+    file: function (callback) {
+      invoker.file(req.session.passport.user.accessToken, req.params.id, callback);
     },
     documents: function (callback) {
       invoker.documents(callback);
@@ -64,10 +64,10 @@ function viewByFile(req, res) {
       return;
     }
     if (result.documents.document_collection.entries.some(function(entry) {
-      return entry.name === req.params.id && new Date(result.content.modified_at) < new Date(entry.created_at);
+      return entry.name === req.params.id && new Date(result.file.modified_at) < new Date(entry.created_at);
     })) {
       var id = result.documents.document_collection.entries.filter(function(entry) {
-        return entry.name === req.params.id && new Date(result.content.modified_at) < new Date(entry.created_at);
+        return entry.name === req.params.id && new Date(result.file.modified_at) < new Date(entry.created_at);
       }).shift().id;
       invoker.sessions(id, function(err, result) {
         if (err) {
