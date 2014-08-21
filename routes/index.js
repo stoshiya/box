@@ -138,7 +138,7 @@ function indexing(token, id, callback) {
           invoker.extract(result.id, callback);
         },
         function(text, callback) {
-          elasticsearch.putDocument(result.file.id, result.file.name, result.file.created_by.id, text, callback);
+          elasticsearch.putDocument(result.file.id, result.file.name, result.file.modified_at, result.file.created_by.id, text, callback);
         }
       ], callback);
     }
