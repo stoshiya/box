@@ -190,7 +190,7 @@ function search(req, res) {
     res.send(400);
     return;
   }
-  elasticsearch.search(req.query.query, function(err, result) {
+  elasticsearch.search(req.session.passport.user.id, req.query.query, function(err, result) {
     if (err) {
       res.send(500);
       console.error(err);
