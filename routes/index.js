@@ -97,7 +97,7 @@ function view(req, res) {
   });
 }
 
-function indexing(token, id, callback) {
+function indexing(userId, token, id, callback) {
   async.waterfall([
     function(callback) {
       async.parallel({
@@ -128,19 +128,29 @@ function indexing(token, id, callback) {
             invoker.upload(url, id, callback);
           }
         ], function(err, id) {
-          callback(err,  { file: result.file, id: id })
+          callback(err, { file: result.file, id: id });
         });
       }
     },
     function(result, callback) {
-      async.waterfall([
-        function(callback) {
-          invoker.extract(result.id, callback);
-        },
-        function(text, callback) {
-          elasticsearch.putDocument(result.file.id, result.file.name, result.file.modified_at, result.file.created_by.id, text, callback);
+      elasticsearch.documents(result.file.id, userId, function(err, documents) {
+        var modified = new Date(result.file.modified_at);
+        var isUpdated = documents.every(function(document) {
+          return document._source.modified === result.file.modified_at || new Date(document._source.modified) === modified;
+        });
+        if (isUpdated) {
+          callback();
+          return;
         }
-      ], callback);
+        async.waterfall([
+          function (callback) {
+            invoker.extract(result.id, callback);
+          },
+          function (text, callback) {
+            elasticsearch.upsertDocument(documents, result.file.id, result.file.name, result.file.modified_at, result.file.created_by.id, text, callback);
+          }
+        ], callback);
+      });
     }
   ], callback);
 }
@@ -175,7 +185,7 @@ function createIndex(req, res) {
     res.send(400);
     return;
   }
-  indexing(req.session.passport.user.accessToken, req.params.id, function(err, result) {
+  indexing(req.session.passport.user.id, req.session.passport.user.accessToken, req.params.id, function(err, result) {
     if (err) {
       res.send(500);
       console.error(err);
