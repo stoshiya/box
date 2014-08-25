@@ -134,13 +134,15 @@ function indexing(userId, token, id, callback) {
     },
     function(result, callback) {
       elasticsearch.documents(result.file.id, userId, function(err, documents) {
-        var modified = new Date(result.file.modified_at);
-        var isUpdated = documents.every(function(document) {
-          return document._source.modified === result.file.modified_at || new Date(document._source.modified) === modified;
-        });
-        if (isUpdated) {
-          callback();
-          return;
+        if (documents.length > 0) {
+          var modified = new Date(result.file.modified_at);
+          var isUpdated = documents.every(function (document) {
+            return document._source.modified === result.file.modified_at || new Date(document._source.modified) === modified;
+          });
+          if (isUpdated) {
+            callback();
+            return;
+          }
         }
         async.waterfall([
           function (callback) {
