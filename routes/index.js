@@ -18,7 +18,7 @@ function folders(req, res) {
   invoker.folder(req.session.passport.user.accessToken, req.params.id, function(err, result) {
     if (err) {
       console.error(err);
-      res.send(500);
+      res.status(500).end();
     } else {
       result.item_collection.entries.forEach(function(entry) {
         entry.href = '/' + entry.type + 's/' + entry.id;
@@ -32,7 +32,7 @@ function files(req, res) {
   invoker.file(req.session.passport.user.accessToken, req.params.id, function(err, result) {
     if (err) {
       console.error(err);
-      res.send(500);
+      res.status(500).end();
     } else {
       res.render('files', { title: TITLE, result: result });
     }
@@ -57,7 +57,7 @@ function view(req, res) {
   }, function (err, result) {
     if (err) {
       console.error(err);
-      res.send(500);
+      res.status(500).end();
       return;
     }
     if (result.documents.document_collection.entries.some(function(entry) {
@@ -69,7 +69,7 @@ function view(req, res) {
       invoker.sessions(id, function(err, result) {
         if (err) {
           console.error(err);
-          res.send(500);
+          res.status(500).end();
           return;
         }
         res.redirect(result.urls.view);
@@ -88,7 +88,7 @@ function view(req, res) {
       ], function (err, result) {
         if (err) {
           console.error(err);
-          res.send(500);
+          res.status(500).end();
           return;
         }
         res.redirect(result.urls.view);
@@ -149,7 +149,7 @@ function documents(req, res) {
   invoker.documents(function(err, result) {
     if (err) {
       console.error(err);
-      res.send(500);
+      res.status(500).end();
       return;
     }
     res.render('documents', { title: TITLE, result: result });
@@ -172,12 +172,12 @@ function pdf(req, res) {
 
 function createIndex(req, res) {
   if (typeof req.params.id !== 'string') {
-    res.send(400);
+    res.status(400).end();
     return;
   }
   indexing(req.session.passport.user.accessToken, req.params.id, function(err, result) {
     if (err) {
-      res.send(500);
+      res.status(500).end();
       console.error(err);
       return;
     }
@@ -187,12 +187,12 @@ function createIndex(req, res) {
 
 function search(req, res) {
   if (typeof req.query.query !== 'string' || req.query.query === '') {
-    res.send(400);
+    res.status(400).end();
     return;
   }
   elasticsearch.search(req.query.query, function(err, result) {
     if (err) {
-      res.send(500);
+      res.status(500).end();
       console.error(err);
       return;
     }
