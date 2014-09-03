@@ -47,53 +47,51 @@ function download(req, res) {
 }
 
 function view(req, res) {
-  async.parallel({
-    file: function (callback) {
-      invoker.file(req.session.passport.user.accessToken, req.params.id, callback);
+  async.waterfall([
+    function (callback) {
+      async.parallel({
+        file: function (callback) {
+          invoker.file(req.session.passport.user.accessToken, req.params.id, callback);
+        },
+        documents: function (callback) {
+          invoker.documents(callback);
+        }
+      }, callback);
     },
-    documents: function (callback) {
-      invoker.documents(callback);
+    function (result, callback) {
+      if (result.documents.document_collection.entries.some(function (entry) {
+        return entry.name === req.params.id && new Date(result.file.modified_at) < new Date(entry.created_at);
+      })) {
+        callback(null, result.documents.document_collection.entries.filter(function (entry) {
+          return entry.name === req.params.id && new Date(result.file.modified_at) < new Date(entry.created_at);
+        }).shift().id);
+      } else {
+        async.waterfall([
+          function (callback) {
+            invoker.location(req.session.passport.user.accessToken, req.params.id, callback);
+          },
+          function (url, callback) {
+            invoker.upload(url, req.params.id, callback);
+          }
+        ], function (err, result) {
+          if (err) {
+            callback(err);
+          } else {
+            callback(null, result.id);
+          }
+        });
+      }
+    },
+    function (id, callback) {
+      invoker.sessions(id, callback);
     }
-  }, function (err, result) {
+  ], function (err, result) {
     if (err) {
       console.error(err);
       res.status(500).end();
       return;
     }
-    if (result.documents.document_collection.entries.some(function(entry) {
-      return entry.name === req.params.id && new Date(result.file.modified_at) < new Date(entry.created_at);
-    })) {
-      var id = result.documents.document_collection.entries.filter(function(entry) {
-        return entry.name === req.params.id && new Date(result.file.modified_at) < new Date(entry.created_at);
-      }).shift().id;
-      invoker.sessions(id, function(err, result) {
-        if (err) {
-          console.error(err);
-          res.status(500).end();
-          return;
-        }
-        res.redirect(result.urls.view);
-      });
-    } else {
-      async.waterfall([
-        function (callback) {
-          invoker.location(req.session.passport.user.accessToken, req.params.id, callback);
-        },
-        function (url, callback) {
-          invoker.upload(url, req.params.id, callback);
-        },
-        function (body, callback) {
-          invoker.sessions(body.id, callback);
-        }
-      ], function (err, result) {
-        if (err) {
-          console.error(err);
-          res.status(500).end();
-          return;
-        }
-        res.redirect(result.urls.view);
-      });
-    }
+    res.redirect(result.urls.view);
   });
 }
 
