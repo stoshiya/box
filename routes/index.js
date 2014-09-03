@@ -20,9 +20,6 @@ function folders(req, res) {
       console.error(err);
       res.status(500).end();
     } else {
-      result.item_collection.entries.forEach(function(entry) {
-        entry.href = '/' + entry.type + 's/' + entry.id;
-      });
       res.render('folders', { title: TITLE, result: result });
     }
   });

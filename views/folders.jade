@@ -15,8 +15,9 @@ block content
      div
        - if (entry.type === 'folder')
          i.fa.fa-lg.fa-folder-o
+         a(href='/folders/#{entry.id}') #{entry.name}
        - else
          i.fa.fa-lg.fa-file-o
-       a(href='#{entry.href}') #{entry.name}
+         a(href='/files/#{entry.id}') #{entry.name}
 
   include include/logout
