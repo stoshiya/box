@@ -46,6 +46,19 @@ app.use(session({ secret: 'secret', resave: true, saveUninitialized: true, cooki
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(function(req, res, next) {
+  // run indexing for all entries at the first login.
+  if (req.isAuthenticated() && typeof req.session.callbackURL !=='undefined') {
+    routes.entities(req.session.passport.user.id, req.session.passport.user.accessToken, '0', function(err) {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log('finished to create indexing for all entities.');
+      }
+    });
+  }
+  next();
+});
 
 
 var auth = function(req, res, next) {

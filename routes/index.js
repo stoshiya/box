@@ -208,6 +208,23 @@ function search(req, res) {
   });
 }
 
+function entities(userId, token, id, callback) {
+  async.waterfall([
+    function (callback) {
+      invoker.folder(token, id, callback);
+    },
+    function (result, callback) {
+      async.eachSeries(result.item_collection.entries, function(entry, callback) {
+        if (entry.type === 'folder') {
+          entities(userId, token, entry.id, callback);
+        } else {
+          indexing(userId, token, entry.id, callback);
+        }
+      }, callback);
+    }
+  ], callback);
+}
+
 exports.index = index;
 exports.folders = folders;
 exports.files = files;
@@ -218,3 +235,4 @@ exports.zip = zip;
 exports.pdf = pdf;
 exports.createIndex = createIndex;
 exports.search = search;
+exports.entities = entities;
