@@ -15,7 +15,7 @@ function index(req, res) {
 }
 
 function folders(req, res) {
-  invoker.folder(req.session.passport.user.accessToken, req.params.id, function(err, result) {
+  invoker.folder(req.session.passport.user.accessToken, req.params.id, function (err, result) {
     if (err) {
       console.error(err);
       res.status(500).end();
@@ -26,7 +26,7 @@ function folders(req, res) {
 }
 
 function files(req, res) {
-  invoker.file(req.session.passport.user.accessToken, req.params.id, function(err, result) {
+  invoker.file(req.session.passport.user.accessToken, req.params.id, function (err, result) {
     if (err) {
       console.error(err);
       res.status(500).end();
@@ -43,6 +43,18 @@ function download(req, res) {
   }).pipe(res);
 }
 
+function hasDocument(id, result) {
+  return result.documents.document_collection.entries.some(function (entry) {
+    return entry.name === id && new Date(result.file.modified_at) < new Date(entry.created_at);
+  });
+}
+
+function findId(id, result) {
+  return result.documents.document_collection.entries.filter(function (entry) {
+    return entry.name === id && new Date(result.file.modified_at) < new Date(entry.created_at);
+  }).shift().id;
+}
+
 function view(req, res) {
   async.waterfall([
     function (callback) {
@@ -56,12 +68,8 @@ function view(req, res) {
       }, callback);
     },
     function (result, callback) {
-      if (result.documents.document_collection.entries.some(function (entry) {
-        return entry.name === req.params.id && new Date(result.file.modified_at) < new Date(entry.created_at);
-      })) {
-        callback(null, result.documents.document_collection.entries.filter(function (entry) {
-          return entry.name === req.params.id && new Date(result.file.modified_at) < new Date(entry.created_at);
-        }).shift().id);
+      if (hasDocument(req.params.id, result)) {
+        callback(null, findId(req.params.id, result));
       } else {
         async.waterfall([
           function (callback) {
@@ -94,7 +102,7 @@ function view(req, res) {
 
 function indexing(userId, token, id, callback) {
   async.waterfall([
-    function(callback) {
+    function (callback) {
       async.parallel({
         file: function (callback) {
           invoker.file(token, id, callback);
@@ -104,16 +112,9 @@ function indexing(userId, token, id, callback) {
         }
       }, callback);
     },
-    function(result, callback) {
-      if (result.documents.document_collection.entries.some(function (entry) {
-        return entry.name === id && new Date(result.file.modified_at) < new Date(entry.created_at);
-      })) {
-        callback(null, {
-          file: result.file,
-          id:   result.documents.document_collection.entries.filter(function (entry) {
-            return entry.name === id && new Date(result.file.modified_at) < new Date(entry.created_at);
-          }).shift().id
-        });
+    function (result, callback) {
+      if (hasDocument(id, result)) {
+        callback(null, { file: result.file, id: findId(id, result) });
       } else {
         async.waterfall([
           function (callback) {
@@ -122,13 +123,13 @@ function indexing(userId, token, id, callback) {
           function (url, callback) {
             invoker.upload(url, id, callback);
           }
-        ], function(err, id) {
+        ], function (err, id) {
           callback(err, { file: result.file, id: id });
         });
       }
     },
-    function(result, callback) {
-      elasticsearch.documents(result.file.id, userId, function(err, documents) {
+    function (result, callback) {
+      elasticsearch.documents(result.file.id, userId, function (err, documents) {
         if (documents.length > 0) {
           var modified = new Date(result.file.modified_at);
           var isUpdated = documents.every(function (document) {
@@ -182,7 +183,7 @@ function createIndex(req, res) {
     res.status(400).end();
     return;
   }
-  indexing(req.session.passport.user.id, req.session.passport.user.accessToken, req.params.id, function(err, result) {
+  indexing(req.session.passport.user.id, req.session.passport.user.accessToken, req.params.id, function (err, result) {
     if (err) {
       res.status(500).end();
       console.error(err);
@@ -197,7 +198,7 @@ function search(req, res) {
     res.status(400).end();
     return;
   }
-  elasticsearch.search(req.session.passport.user.id, req.query.query, function(err, result) {
+  elasticsearch.search(req.session.passport.user.id, req.query.query, function (err, result) {
     if (err) {
       res.status(500).end();
       console.error(err);
