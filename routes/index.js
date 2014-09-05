@@ -178,21 +178,6 @@ function pdf(req, res) {
   }).pipe(res);
 }
 
-function createIndex(req, res) {
-  if (typeof req.params.id !== 'string') {
-    res.status(400).end();
-    return;
-  }
-  indexing(req.session.passport.user.id, req.session.passport.user.accessToken, req.params.id, function (err, result) {
-    if (err) {
-      res.status(500).end();
-      console.error(err);
-      return;
-    }
-    res.send(result);
-  });
-}
-
 function search(req, res) {
   if (typeof req.query.query !== 'string' || req.query.query === '') {
     res.status(400).end();
@@ -208,7 +193,7 @@ function search(req, res) {
   });
 }
 
-function entities(userId, token, id, callback) {
+function createIndexes(userId, token, id, callback) {
   async.waterfall([
     function (callback) {
       invoker.folder(token, id, callback);
@@ -216,7 +201,7 @@ function entities(userId, token, id, callback) {
     function (result, callback) {
       async.eachSeries(result.item_collection.entries, function(entry, callback) {
         if (entry.type === 'folder') {
-          entities(userId, token, entry.id, callback);
+          createIndexes(userId, token, entry.id, callback);
         } else {
           indexing(userId, token, entry.id, callback);
         }
@@ -233,6 +218,5 @@ exports.view = view;
 exports.documents = documents;
 exports.zip = zip;
 exports.pdf = pdf;
-exports.createIndex = createIndex;
 exports.search = search;
-exports.entities = entities;
+exports.createIndexes = createIndexes;

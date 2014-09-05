@@ -46,24 +46,9 @@ app.use(session({ secret: 'secret', resave: true, saveUninitialized: true, cooki
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(function(req, res, next) {
-  // run indexing for all entries at the first login.
-  if (req.isAuthenticated() && typeof req.session.callbackURL !=='undefined') {
-    routes.entities(req.session.passport.user.id, req.session.passport.user.accessToken, '0', function(err) {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log('finished to create indexing for all entities.');
-      }
-    });
-  }
-  next();
-});
 
-
-var auth = function(req, res, next) {
+var auth = function (req, res, next) {
   if (req.isAuthenticated()) {
-    delete req.session.callbackURL;
     next();
     return;
   }
@@ -75,6 +60,14 @@ var router = express.Router();
 router.get('/login',    passport.authenticate('box'));
 router.get('/callback', passport.authenticate('box', { failureRedirect: '/login' }), function (req, res) {
   res.redirect(req.session.callbackURL || '/folders/0');
+  delete req.session.callbackURL;
+  routes.createIndexes(req.session.passport.user.id, req.session.passport.user.accessToken, '0', function (err) {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log('finished indexes.');
+    }
+  });
 });
 router.get('/logout', function(req, res) {
   req.logout();
@@ -88,7 +81,6 @@ router.get('/view/:id',     auth, routes.view);
 router.get('/documents',    auth, routes.documents);
 router.get('/zip/:id',      auth, routes.zip);
 router.get('/pdf/:id',      auth, routes.pdf);
-router.get('/index/:id',    auth, routes.createIndex);
 router.get('/search',       auth, routes.search);
 app.use('/', router);
 
