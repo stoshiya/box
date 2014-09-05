@@ -196,10 +196,10 @@ function search(req, res) {
 function createIndexes(userId, token, id, callback) {
   async.waterfall([
     function (callback) {
-      box.folder(token, id, callback);
+      box.folderItems(token, id, callback);
     },
     function (result, callback) {
-      async.eachSeries(result.item_collection.entries, function(entry, callback) {
+      async.eachSeries(result, function(entry, callback) {
         if (entry.type === 'folder') {
           createIndexes(userId, token, entry.id, callback);
         } else {
