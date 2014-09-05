@@ -2,7 +2,7 @@ var async = require('async');
 var request = require('request');
 var constants = require('./../lib/constants');
 var elasticsearch = require('./../lib/elasticsearch');
-var invoker = require('./../lib/invoker');
+var box = require('./../lib/box');
 
 var TITLE = constants.TITLE;
 
@@ -15,7 +15,7 @@ function index(req, res) {
 }
 
 function folders(req, res) {
-  invoker.folder(req.session.passport.user.accessToken, req.params.id, function (err, result) {
+  box.folder(req.session.passport.user.accessToken, req.params.id, function (err, result) {
     if (err) {
       console.error(err);
       res.status(500).end();
@@ -26,7 +26,7 @@ function folders(req, res) {
 }
 
 function files(req, res) {
-  invoker.file(req.session.passport.user.accessToken, req.params.id, function (err, result) {
+  box.file(req.session.passport.user.accessToken, req.params.id, function (err, result) {
     if (err) {
       console.error(err);
       res.status(500).end();
@@ -60,10 +60,10 @@ function view(req, res) {
     function (callback) {
       async.parallel({
         file: function (callback) {
-          invoker.file(req.session.passport.user.accessToken, req.params.id, callback);
+          box.file(req.session.passport.user.accessToken, req.params.id, callback);
         },
         documents: function (callback) {
-          invoker.documents(callback);
+          box.documents(callback);
         }
       }, callback);
     },
@@ -73,10 +73,10 @@ function view(req, res) {
       } else {
         async.waterfall([
           function (callback) {
-            invoker.location(req.session.passport.user.accessToken, req.params.id, callback);
+            box.location(req.session.passport.user.accessToken, req.params.id, callback);
           },
           function (url, callback) {
-            invoker.upload(url, req.params.id, callback);
+            box.upload(url, req.params.id, callback);
           }
         ], function (err, result) {
           if (err) {
@@ -88,7 +88,7 @@ function view(req, res) {
       }
     },
     function (id, callback) {
-      invoker.sessions(id, callback);
+      box.sessions(id, callback);
     }
   ], function (err, result) {
     if (err) {
@@ -105,10 +105,10 @@ function indexing(userId, token, id, callback) {
     function (callback) {
       async.parallel({
         file: function (callback) {
-          invoker.file(token, id, callback);
+          box.file(token, id, callback);
         },
         documents: function (callback) {
-          invoker.documents(callback);
+          box.documents(callback);
         }
       }, callback);
     },
@@ -118,10 +118,10 @@ function indexing(userId, token, id, callback) {
       } else {
         async.waterfall([
           function (callback) {
-            invoker.location(token, id, callback);
+            box.location(token, id, callback);
           },
           function (url, callback) {
-            invoker.upload(url, id, callback);
+            box.upload(url, id, callback);
           }
         ], function (err, id) {
           callback(err, { file: result.file, id: id });
@@ -142,7 +142,7 @@ function indexing(userId, token, id, callback) {
         }
         async.waterfall([
           function (callback) {
-            invoker.extract(result.id, callback);
+            box.extract(result.id, callback);
           },
           function (text, callback) {
             elasticsearch.upsertDocument(documents, result.file.id, result.file.name, result.file.modified_at, result.file.created_by.id, text, callback);
@@ -154,7 +154,7 @@ function indexing(userId, token, id, callback) {
 }
 
 function documents(req, res) {
-  invoker.documents(function(err, result) {
+  box.documents(function(err, result) {
     if (err) {
       console.error(err);
       res.status(500).end();
@@ -196,7 +196,7 @@ function search(req, res) {
 function createIndexes(userId, token, id, callback) {
   async.waterfall([
     function (callback) {
-      invoker.folder(token, id, callback);
+      box.folder(token, id, callback);
     },
     function (result, callback) {
       async.eachSeries(result.item_collection.entries, function(entry, callback) {
