@@ -1,10 +1,12 @@
 var async = require('async');
+var path = require('path');
 var request = require('request');
 var constants = require('./../lib/constants');
 var elasticsearch = require('./../lib/elasticsearch');
 var box = require('./../lib/box');
 
 var TITLE = constants.TITLE;
+var REGEXP_SUPPORTED_FILES = /pdf|doc|docx|ppt|pptx/i; // refer <https://developers.box.com/view/>
 
 function index(req, res) {
   if (req.isAuthenticated()) {
@@ -130,6 +132,10 @@ function indexing(userId, token, id, callback) {
     },
     function (result, callback) {
       elasticsearch.documents(result.file.id, userId, function (err, documents) {
+        if (err) {
+          callback(err);
+          return;
+        }
         if (documents.length > 0) {
           var modified = new Date(result.file.modified_at);
           var isUpdated = documents.every(function (document) {
@@ -202,8 +208,10 @@ function createIndexes(userId, token, id, callback) {
       async.eachSeries(result, function(entry, callback) {
         if (entry.type === 'folder') {
           createIndexes(userId, token, entry.id, callback);
-        } else {
+        } else if (path.extname(entry.name).match(REGEXP_SUPPORTED_FILES) !== null) {
           indexing(userId, token, entry.id, callback);
+        } else {
+          callback();
         }
       }, callback);
     }
