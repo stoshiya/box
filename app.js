@@ -1,4 +1,5 @@
 var express = require('express');
+var debug = require('debug')('box');
 var path = require('path');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
@@ -65,7 +66,7 @@ router.get('/callback', passport.authenticate('box', { failureRedirect: '/login'
     if (err) {
       console.error(err);
     } else {
-      console.log('finished indexes.');
+      debug('finished indexes.');
     }
   });
 });
