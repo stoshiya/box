@@ -70,17 +70,11 @@ function view(req, res) {
           function (url, callback) {
             box.upload(url, req.params.id, callback);
           }
-        ], function (err, result) {
-          if (err) {
-            callback(err);
-          } else {
-            callback(null, result.id);
-          }
-        });
+        ], callback);
       }
     },
-    function (id, callback) {
-      box.sessions(id, callback);
+    function (result, callback) {
+      box.sessions(result.id, callback);
     }
   ], function (err, result) {
     if (err) {
