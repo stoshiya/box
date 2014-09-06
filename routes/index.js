@@ -1,9 +1,11 @@
 var async = require('async');
+var debug = require('debug')('box');
 var path = require('path');
 var request = require('request');
 var constants = require('./../lib/constants');
 var elasticsearch = require('./../lib/elasticsearch');
 var box = require('./../lib/box');
+var libUtil = require('./../lib/util');
 
 var TITLE = constants.TITLE;
 var REGEXP_SUPPORTED_FILES = /pdf|doc|docx|ppt|pptx/i; // refer <https://developers.box.com/view/>
@@ -45,18 +47,6 @@ function download(req, res) {
   }).pipe(res);
 }
 
-function hasDocument(id, result) {
-  return result.documents.document_collection.entries.some(function (entry) {
-    return entry.name === id && new Date(result.file.modified_at) < new Date(entry.created_at);
-  });
-}
-
-function findId(id, result) {
-  return result.documents.document_collection.entries.filter(function (entry) {
-    return entry.name === id && new Date(result.file.modified_at) < new Date(entry.created_at);
-  }).shift().id;
-}
-
 function view(req, res) {
   async.waterfall([
     function (callback) {
@@ -70,8 +60,8 @@ function view(req, res) {
       }, callback);
     },
     function (result, callback) {
-      if (hasDocument(req.params.id, result)) {
-        callback(null, findId(req.params.id, result));
+      if (libUtil.hasDocument(req.params.id, result)) {
+        callback(null, libUtil.findId(req.params.id, result));
       } else {
         async.waterfall([
           function (callback) {
@@ -115,8 +105,8 @@ function indexing(userId, token, id, callback) {
       }, callback);
     },
     function (result, callback) {
-      if (hasDocument(id, result)) {
-        callback(null, { file: result.file, id: findId(id, result) });
+      if (libUtil.hasDocument(id, result)) {
+         callback(null, { file: result.file, id: libUtil.findId(id, result) });
       } else {
         async.waterfall([
           function (callback) {
@@ -218,6 +208,23 @@ function createIndexes(userId, token, id, callback) {
   ], callback);
 }
 
+function callback(req, res) {
+  res.redirect(req.session.callbackURL || '/folders/0');
+  delete req.session.callbackURL;
+  createIndexes(req.session.passport.user.id, req.session.passport.user.accessToken, '0', function (err) {
+    if (err) {
+      console.error(err);
+    } else {
+      debug('finished indexes.');
+    }
+  });
+}
+
+function logout(req, res) {
+  req.logout();
+  res.redirect('/');
+}
+
 exports.index = index;
 exports.folders = folders;
 exports.files = files;
@@ -227,4 +234,5 @@ exports.documents = documents;
 exports.zip = zip;
 exports.pdf = pdf;
 exports.search = search;
-exports.createIndexes = createIndexes;
+exports.callback = callback;
+exports.logout = logout;

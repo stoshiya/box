@@ -1,5 +1,4 @@
 var express = require('express');
-var debug = require('debug')('box');
 var path = require('path');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
@@ -59,22 +58,9 @@ var auth = function (req, res, next) {
 
 var router = express.Router();
 router.get('/login',    passport.authenticate('box'));
-router.get('/callback', passport.authenticate('box', { failureRedirect: '/login' }), function (req, res) {
-  res.redirect(req.session.callbackURL || '/folders/0');
-  delete req.session.callbackURL;
-  routes.createIndexes(req.session.passport.user.id, req.session.passport.user.accessToken, '0', function (err) {
-    if (err) {
-      console.error(err);
-    } else {
-      debug('finished indexes.');
-    }
-  });
-});
-router.get('/logout', function(req, res) {
-  req.logout();
-  res.redirect('/');
-});
-router.get('/', routes.index);
+router.get('/callback', passport.authenticate('box', { failureRedirect: '/login' }), routes.callback);
+router.get('/logout',  routes.logout);
+router.get('/',        routes.index);
 router.get('/folders/:id',  auth, routes.folders);
 router.get('/files/:id',    auth, routes.files);
 router.get('/download/:id', auth, routes.download);
