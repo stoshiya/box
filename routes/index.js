@@ -10,11 +10,11 @@ var libUtil = require('./../lib/util');
 var TITLE = constants.TITLE;
 var REGEXP_SUPPORTED_FILES = /pdf|doc|docx|ppt|pptx/i; // refer <https://developers.box.com/view/>
 
-function index(req, res) {
+function loginform(req, res) {
   if (req.isAuthenticated()) {
     res.redirect('/folders/0');
   } else {
-    res.render('index', { title: TITLE });
+    res.render('loginform', { title: TITLE });
   }
 }
 
@@ -225,7 +225,7 @@ function logout(req, res) {
   res.redirect('/');
 }
 
-exports.index = index;
+exports.loginform = loginform;
 exports.folders = folders;
 exports.files = files;
 exports.download = download;

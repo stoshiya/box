@@ -59,8 +59,8 @@ var auth = function (req, res, next) {
 var router = express.Router();
 router.get('/login',    passport.authenticate('box'));
 router.get('/callback', passport.authenticate('box', { failureRedirect: '/login' }), routes.callback);
-router.get('/logout',  routes.logout);
-router.get('/',        routes.index);
+router.get('/logout', routes.logout);
+router.get('/',       routes.loginform);
 router.get('/folders/:id',  auth, routes.folders);
 router.get('/files/:id',    auth, routes.files);
 router.get('/download/:id', auth, routes.download);
