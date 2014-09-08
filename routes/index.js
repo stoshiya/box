@@ -73,6 +73,9 @@ function view(req, res) {
         ], callback);
       }
     },
+    function(result, callback) {
+      box.wait(result.id, callback);
+    },
     function (result, callback) {
       box.sessions(result.id, callback);
     }
@@ -99,8 +102,9 @@ function indexing(userId, token, id, callback) {
       }, callback);
     },
     function (result, callback) {
+      var file = result.file;
       if (libUtil.hasDocument(id, result)) {
-         callback(null, { file: result.file, id: libUtil.findId(id, result) });
+         callback(null, { file: file, id: libUtil.findId(id, result) });
       } else {
         async.waterfall([
           function (callback) {
@@ -108,9 +112,16 @@ function indexing(userId, token, id, callback) {
           },
           function (url, callback) {
             box.upload(url, id, callback);
+          },
+          function (result, callback) {
+            box.wait(result.id, callback);
           }
-        ], function (err, id) {
-          callback(err, { file: result.file, id: id });
+        ], function (err, result) {
+          if (err) {
+            callback(err);
+          } else {
+            callback(null, { file: file, id: result.id });
+          }
         });
       }
     },
