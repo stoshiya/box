@@ -73,8 +73,8 @@ function view(req, res) {
         ], callback);
       }
     },
-    function(result, callback) {
-      box.wait(result.id, callback);
+    function(id, callback) {
+      box.wait(id, callback);
     },
     function (result, callback) {
       box.sessions(result.id, callback);
