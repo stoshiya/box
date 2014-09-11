@@ -35,6 +35,7 @@ function files(req, res) {
       console.error(err);
       res.status(500).end();
     } else {
+      result.viewable = path.extname(result.name).match(REGEXP_SUPPORTED_FILES) !== null;
       res.render('files', { title: TITLE, result: result });
     }
   });
@@ -60,6 +61,10 @@ function view(req, res) {
       }, callback);
     },
     function (result, callback) {
+      if (path.extname(result.file.name).match(REGEXP_SUPPORTED_FILES) === null) {
+        callback({ error: new Error('Unsupported file type.') });
+        return;
+      }
       if (libUtil.hasDocument(req.params.id, result)) {
         callback(null, libUtil.findId(req.params.id, result));
       } else {
@@ -103,6 +108,10 @@ function indexing(userId, token, id, callback) {
     },
     function (result, callback) {
       var file = result.file;
+      if (path.extname(file.name).match(REGEXP_SUPPORTED_FILES) === null) {
+        callback({ error: new Error('Unsupported file type.') });
+        return;
+      }
       if (libUtil.hasDocument(id, result)) {
          callback(null, { file: file, id: libUtil.findId(id, result) });
       } else {
